@@ -1,0 +1,38 @@
+---
+
+- name: Configure kernel parameter
+  copy: src=etc/sysctl.d/30-non_local_bind.conf dest=/etc/sysctl.d/30-non_local_bin.conf mode=0644 owner=root group=root
+  notify:
+    - Start procps
+    - Reload haproxy
+  when: _haproxy.non_local_bind
+
+- name: Install HAProxy
+  apt: name="{{ item }}" state=present
+  with_items:
+    - haproxy={{ _haproxy.version }}
+    - hatop
+    - socat
+  notify:
+    - Reload haproxy
+
+- name: Create Error Pages
+  template: src=etc/haproxy/errors/error.http.j2 dest=/etc/haproxy/errors/{{ item.code }}.http owner=root group=root mode=0644
+  with_items: _haproxy.error_pages.pages
+  notify:
+    - Reload haproxy
+
+- name: Create HAProxy SSL certificates directory
+  file: path=/etc/haproxy/ssl state=directory owner=haproxy group=haproxy mode=0750
+
+- name: Install SSL certificates and keys
+  copy: content="{{ item.value.cert | b64decode }}" dest=/etc/haproxy/ssl/{{ item.value.filename }} mode=0640 owner=haproxy group=haproxy
+  with_dict: _haproxy.certs
+  notify:
+    - Reload haproxy
+
+- name: Create HAProxy configuration file
+  template: src=etc/haproxy/haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg owner=haproxy group=haproxy mode=0640
+  notify:
+    - Reload haproxy
+

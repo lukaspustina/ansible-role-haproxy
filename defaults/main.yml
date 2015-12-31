@@ -1,0 +1,66 @@
+HAPROXY:
+  use_default_config: False
+  version: "1.5*"
+  non_local_bind: False
+  admin:
+    ips:
+      - "{{ ansible_default_ipv4.address }}:8404"
+    user: admin
+    password: password
+    uri: "/monitor"
+  ciphers: "ALL:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!LOW:!EXP:!DSS:!SEED:!ECDSA:!EDH:!CAMELLIA:!RC4:@STRENGTH"
+  certs:
+    <ansible_fqdn>:
+      filename: {{ ansible_fqdn }}.combined.pem
+      cert:<cat private.key server.cert intermediate.cert root.cert | base64>
+  extra:
+  frontends:
+    - name: {{ ansible_fqdn }}
+      ip: "{{ ansible_default_ipv4.address }}"
+      tls: false
+      port: 80
+      backend:
+      options:
+        - forwardfor
+        - httplog
+      extra: |+
+        acl is_my_domain hdr(host) -m end {{ ansible_fqdn }}
+        redirect location https://{{ ansible_fqdn }} code 301 if !is_my_domain
+        redirect scheme https code 301 if !{ ssl_fc }
+    - name: tls-sni
+      ip: "{{ ansible_default_ipv4.address }}"
+      tls: true
+      port: 443
+      cert_id: {{ ansible_fqdn }}
+      backend: {{ ansible_fqdn }}
+      options:
+        - forwardfor
+        - httplog
+      sni: []
+      extra:
+  backends:
+    - name: {{ ansible_fqdn }}
+      balance: leastconn
+      cookie: CD insert preserve
+      options:
+        - httplog
+        - httpchk
+      servers:
+        - name: localhost
+          ip: localhost
+          port: 80
+          option: check cookie localhost
+  error_pages:
+    title: <My Title>
+    e_mail: info@{{ ansible_fqdn }}
+    phone: +91 111 0
+    pages:
+      - { code: 400, description: "Bad request", comment: "Ihr Browser hat eine ung&uuml;ltige Anfrage gesendet." }
+      - { code: 401, description: "Unauthorized", comment: "Die Anfrage kann nicht ohne gültige Authentifizierung durchgeführt werden." }
+      - { code: 403, description: "Forbidden", comment: "Die Anfrage Ihres Browsers ist verboten." }
+      - { code: 408, description: "Request Time-out", comment: "Die Anfrage Ihres Browsers hat zu lange gedauert." }
+      - { code: 500, description: "Server Error", comment: "Ein interner Server Fehler ist aufgetreten." }
+      - { code: 502, description: "Bad Gateway", comment: "Der Server hat eine ung&uuml;ltige oder unvollst&auml;ndige Antwort geschickt." }
+      - { code: 503, description: "Service Unavailable", comment: "Zur Zeit ist kein Server zur Beantwortung Ihrer Anfrage verf&uuml;gbar." }
+      - { code: 504, description: "Gateway Time-out", comment: "Die Antwort des Servers hat zu lange gedauert." }
+

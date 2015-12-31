@@ -1,0 +1,96 @@
+global
+  log /dev/log local0
+  log /dev/log local1 notice
+  chroot /var/lib/haproxy
+  stats socket /var/run/haproxy.stat user haproxy group haproxy mode 600 level admin
+  stats timeout 30s
+  user haproxy
+  group haproxy
+  daemon
+
+  # Default SSL material locations
+  ca-base /etc/ssl/certs
+  crt-base /etc/ssl/private
+
+  # Default ciphers to use on SSL-enabled listening sockets.
+  # For more information, see ciphers(1SSL).
+  ssl-default-bind-ciphers {{ _haproxy.ciphers }}
+
+defaults
+  mode http
+  log global
+  option dontlognull
+  option http-keep-alive
+  option redispatch
+  timeout http-request 10s
+  timeout queue 1m
+  timeout connect 5s
+  timeout client 2m
+  timeout server 2m
+  timeout http-keep-alive 10s
+  timeout check 5s
+  retries 3
+  maxconn 2000
+  errorfile 400 /etc/haproxy/errors/400.http
+  errorfile 403 /etc/haproxy/errors/403.http
+  errorfile 408 /etc/haproxy/errors/408.http
+  errorfile 500 /etc/haproxy/errors/500.http
+  errorfile 502 /etc/haproxy/errors/502.http
+  errorfile 503 /etc/haproxy/errors/503.http
+  errorfile 504 /etc/haproxy/errors/504.http
+{{ _haproxy.extra | default("") }}
+
+listen admin
+  bind {{ _haproxy.admin.ips|join(',') }}
+  stats enable
+  stats hide-version
+  stats auth {{ _haproxy.admin.user }}:{{ _haproxy.admin.password }}
+  stats uri {{ _haproxy.admin.uri }}
+  stats refresh 10s
+
+
+###### Frontends
+
+{% for fe in _haproxy.frontends %}
+frontend {{ fe.name }}
+  bind {{ fe.ip }}:{{ fe.port }}{% if fe.tls %} ssl crt {% if fe.cert_id is defined %}/etc/haproxy/ssl/{{ _haproxy.certs[fe.cert_id].filename }}{% endif %} crt /etc/haproxy/ssl/ no-sslv3{% endif %}
+
+{% for o in fe.options %}
+  option {{ o }}
+{% endfor %}
+{% if fe.tls %}
+  reqadd X-Forwarded-Proto:\ https
+{% endif %}
+{% if fe.sni is defined %}
+
+{% for sni in fe.sni %}
+  acl application_{{ sni.application }} ssl_fc_sni -i {{ sni.domain }}
+  use_backend {{ sni.backend }} if application_{{ sni.application }}
+{% endfor %}
+{% endif %}
+
+{% if fe.backend %}
+  default_backend {{ fe.backend }}
+{% endif %}
+
+  {{ fe.extra | default("") }}
+
+{% endfor %}
+
+###### Backends
+
+{% for be in _haproxy.backends %}
+backend {{ be.name }}
+  balance {{ be.balance }}
+{% if be.cookie is defined %}
+  cookie {{ be.cookie }}
+{% endif %}
+{% for o in be.options %}
+  option {{ o }}
+{% endfor %}
+{% for s in be.servers %}
+  server {{ s.name }} {{ s.ip }}:{{ s.port }} {{ s.option|default('') }}
+{% endfor %}
+
+{% endfor %}
+
