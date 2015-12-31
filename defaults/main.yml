@@ -11,11 +11,11 @@ HAPROXY:
   ciphers: "ALL:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!LOW:!EXP:!DSS:!SEED:!ECDSA:!EDH:!CAMELLIA:!RC4:@STRENGTH"
   certs:
     <ansible_fqdn>:
-      filename: {{ ansible_fqdn }}.combined.pem
-      cert:<cat private.key server.cert intermediate.cert root.cert | base64>
+      filename: "{{ ansible_fqdn }}.combined.pem"
+      cert: <cat private.key server.cert intermediate.cert root.cert | base64>
   extra:
   frontends:
-    - name: {{ ansible_fqdn }}
+    - name: "{{ ansible_fqdn }}"
       ip: "{{ ansible_default_ipv4.address }}"
       tls: false
       port: 80
@@ -31,15 +31,15 @@ HAPROXY:
       ip: "{{ ansible_default_ipv4.address }}"
       tls: true
       port: 443
-      cert_id: {{ ansible_fqdn }}
-      backend: {{ ansible_fqdn }}
+      cert_id: "{{ ansible_fqdn }}"
+      backend: "{{ ansible_fqdn }}"
       options:
         - forwardfor
         - httplog
       sni: []
       extra:
   backends:
-    - name: {{ ansible_fqdn }}
+    - name: "{{ ansible_fqdn }}"
       balance: leastconn
       cookie: CD insert preserve
       options:
