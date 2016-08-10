@@ -82,21 +82,21 @@ Example Playbook
               options:
                 - httplog
                 - httpchk
+              defaults:
+                port: 80
+                option: check cookie localhost
               servers:
-                - name: localhost
-                  ip: localhost
-                  port: 80
-                  option: check cookie localhost
+                - localhost
             - name: Fhem
               balance: leastconn
               options:
                 - httplog
                 - httpchk
+              defaults:
+                port: 8083
+                option: check cookie localhost
               servers:
-                - name: localhost
-                  ip: localhost
-                  port: 8083
-                  option: check cookie localhost
+                - localhost
           error_pages:
             title: Heimbot
             e_mail: info@{{ ansible_fqdn }}

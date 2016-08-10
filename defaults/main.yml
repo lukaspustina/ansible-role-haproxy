@@ -45,11 +45,11 @@ HAPROXY:
       options:
         - httplog
         - httpchk
+      defaults:
+        port: 80
+        option: check cookie localhost
       servers:
-        - name: localhost
-          ip: localhost
-          port: 80
-          option: check cookie localhost
+        - localhost
   error_pages:
     title: <My Title>
     e_mail: info@{{ ansible_fqdn }}

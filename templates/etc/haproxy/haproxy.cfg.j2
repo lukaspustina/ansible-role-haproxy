@@ -89,7 +89,7 @@ backend {{ be.name }}
   option {{ o }}
 {% endfor %}
 {% for s in be.servers %}
-  server {{ s.name }} {{ s.ip }}:{{ s.port }} {{ s.option|default('') }}
+  server {{ s }} {{ s }}:{{ be.defaults.port }} {{ be.defaults.option|default('') }}
 {% endfor %}
 
 {% endfor %}
