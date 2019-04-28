@@ -8,11 +8,8 @@
   when: _haproxy.non_local_bind
 
 - name: Install HAProxy
-  apt: name="{{ item }}" state=present
-  with_items:
-    - haproxy={{ _haproxy.version }}
-    - hatop
-    - socat
+  apt:
+    name;: ['haproxy={{ _haproxy.version }}', 'hatop', 'socat'] state=present
   notify:
     - Reload haproxy
 
