@@ -25,7 +25,7 @@
 
 - name: Install SSL certificates and keys
   copy: content="{{ item.value.cert | b64decode }}" dest=/etc/haproxy/ssl/{{ item.value.filename }} mode=0640 owner=haproxy group=haproxy
-  with_dict: _haproxy.certs
+  with_dict: "{{ _haproxy.certs }}"
   notify:
     - Reload haproxy
 
