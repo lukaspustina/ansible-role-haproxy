@@ -9,7 +9,8 @@
 
 - name: Install HAProxy
   apt:
-    name;: ['haproxy={{ _haproxy.version }}', 'hatop', 'socat'] state=present
+    name: ['haproxy={{ _haproxy.version }}', 'hatop', 'socat']
+    state: present
   notify:
     - Reload haproxy
 
