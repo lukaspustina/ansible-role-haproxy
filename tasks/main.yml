@@ -16,7 +16,7 @@
 
 - name: Create Error Pages
   template: src=etc/haproxy/errors/error.http.j2 dest=/etc/haproxy/errors/{{ item.code }}.http owner=root group=root mode=0644
-  with_items: _haproxy.error_pages.pages
+  with_items: "{{ _haproxy.error_pages.pages }}"
   notify:
     - Reload haproxy
 
